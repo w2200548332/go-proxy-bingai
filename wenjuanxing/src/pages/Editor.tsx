@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { Page } from '../components/Shell'
 import { QuestionView } from '../components/QuestionView'
 import { useApp } from '../context'
@@ -12,7 +12,6 @@ const TYPES: QuestionType[] = ['radio', 'checkbox', 'text', 'textarea', 'select'
 export function EditorPage() {
   const { id } = useParams()
   const { user, toast } = useApp()
-  const nav = useNavigate()
   const origin = getSurvey(id || '')
   const [survey, setSurvey] = useState<Survey | null>(origin ?? null)
   const [tab, setTab] = useState<'edit' | 'settings' | 'preview'>('edit')
@@ -98,9 +97,10 @@ export function EditorPage() {
               className="wj-btn-primary"
               onClick={() => {
                 try {
-                  publishSurvey(survey.id)
-                  toast('已发布，可分享填写链接')
-                  nav('/dashboard')
+                  const published = publishSurvey(survey.id)
+                  setSurvey(published)
+                  toast('已发布，可通过填写页收集答卷')
+                  setTab('preview')
                 } catch (e) {
                   toast((e as Error).message, 'err')
                 }
@@ -114,6 +114,14 @@ export function EditorPage() {
 
       {tab === 'preview' ? (
         <div className="mx-auto max-w-2xl px-4 py-10">
+          {survey.status === 'published' ? (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              <span>问卷已发布，可将填写页发给他人作答</span>
+              <Link className="wj-btn-primary py-1.5" to={`/s/${survey.id}`}>
+                打开填写页
+              </Link>
+            </div>
+          ) : null}
           <div className="wj-card p-8">
             <h1 className="text-2xl font-semibold">{survey.title}</h1>
             <p className="mt-2 text-slate-500">{survey.description}</p>

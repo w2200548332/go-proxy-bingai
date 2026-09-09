@@ -19,7 +19,9 @@ export default function App() {
       <Route path="/edit/:id" element={<EditorPage />} />
       <Route path="/stats/:id" element={<StatsPage />} />
       <Route path="/s/:id" element={<FillPage />} />
+      <Route path="/vm/:id" element={<FillPage />} />
       <Route path="/s/:id/thanks" element={<ThanksPage />} />
+      <Route path="/vm/:id/thanks" element={<ThanksPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

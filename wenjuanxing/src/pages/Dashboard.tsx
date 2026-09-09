@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Page } from '../components/Shell'
 import { useApp } from '../context'
@@ -11,10 +12,16 @@ const statusMap: Record<SurveyStatus, { label: string; cls: string }> = {
   closed: { label: '已结束', cls: 'bg-amber-50 text-amber-700' },
 }
 
+function fillUrl(id: string) {
+  return `${location.origin}/s/${id}`
+}
+
 export function DashboardPage() {
   const { user, toast, refresh } = useApp()
   const nav = useNavigate()
   const list = listMySurveys()
+  const [shareId, setShareId] = useState<string | null>(null)
+  const sharing = list.find((s) => s.id === shareId)
 
   if (!user) return <Navigate to="/login" replace />
 
@@ -72,17 +79,15 @@ export function DashboardPage() {
                         <Link className="text-brand-600" to={`/edit/${s.id}`}>
                           编辑
                         </Link>
+                        {s.status === 'published' ? (
+                          <Link className="text-brand-600" to={`/s/${s.id}`}>
+                            填写
+                          </Link>
+                        ) : null}
                         <Link className="text-brand-600" to={`/stats/${s.id}`}>
                           报表
                         </Link>
-                        <button
-                          className="text-brand-600"
-                          onClick={async () => {
-                            const url = `${location.origin}/s/${s.id}`
-                            await navigator.clipboard.writeText(url)
-                            toast('填写链接已复制')
-                          }}
-                        >
+                        <button className="text-brand-600" onClick={() => setShareId(s.id)}>
                           分享
                         </button>
                         {s.status === 'draft' ? (
@@ -93,6 +98,7 @@ export function DashboardPage() {
                                 publishSurvey(s.id)
                                 toast('已发布')
                                 refresh()
+                                setShareId(s.id)
                               } catch (e) {
                                 toast((e as Error).message, 'err')
                               }
@@ -142,6 +148,33 @@ export function DashboardPage() {
           </table>
         </div>
       </div>
+
+      {sharing ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShareId(null)}>
+          <div className="wj-card w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold">分享问卷</h2>
+            <p className="mt-1 text-sm text-slate-500">{sharing.title}</p>
+            <input className="wj-input mt-4" readOnly value={fillUrl(sharing.id)} />
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                className="wj-btn-primary"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(fillUrl(sharing.id))
+                  toast('填写链接已复制')
+                }}
+              >
+                复制链接
+              </button>
+              <Link className="wj-btn-ghost" to={`/s/${sharing.id}`} onClick={() => setShareId(null)}>
+                打开填写页
+              </Link>
+              <button className="wj-btn-ghost" onClick={() => setShareId(null)}>
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </Page>
   )
 }
